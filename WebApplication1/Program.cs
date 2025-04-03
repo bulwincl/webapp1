@@ -1,6 +1,9 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Routing.Patterns;
+using Serilog;
+using WebApplication1.Checks;
 using WebApplication1.Middleware;
 using WebApplication1.Services;
 
@@ -8,20 +11,28 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        string? f = null;
-        string? v = "sdfds" + f;
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Console()
+            .WriteTo.File("logs/myapp.txt", rollingInterval: RollingInterval.Day)
+            .CreateLogger();
 
-        string a = "abc";
-        string b = "ab" + "c";
 
-        bool g = a.Equals(b);
 
         var builder = WebApplication.CreateBuilder(args);
+        builder.Services.AddHttpContextAccessor();
         builder.Configuration["conf1"] = "boo";
 
+
+        builder.Services.AddHealthChecks()
+            .AddCheck<RequestTimeHealthCheck>("RequestTimeCheck");
+
+        builder.Services.AddHttpClient();
+
+
         builder.Services.AddSingleton<IIncrementalService, FooService>();
-        builder.Services.AddTransient<IIncrementalService, FooService>();
-        builder.Services.AddScoped(typeof(FooService));
+        //builder.Services.AddTransient<IIncrementalService, FooService>();
+        //builder.Services.AddScoped(typeof(FooService));
 
         //ServiceDescriptor d = new ServiceDescriptor(typeof(IIncrementalService), typeof(FooService), ServiceLifetime.Scoped);
         //builder.Services.Add(d);
@@ -32,45 +43,17 @@ internal class Program
 
         var app = builder.Build();
 
-
-        // Configure the HTTP request pipeline.
-
-        var summaries = new[]
-        {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+        app.UseExceptionHandler("/api/boom/error");
 
 
         app.UseMiddleware<BooMiddleware>();
         // app.UseMiddleware<BooMiddleware>();
 
-        app.MapGet("/", (IConfiguration conf) => { return $"Index Page. Age = {conf["age"]}"; });
-
-        app.MapGet("/inc", () => 
-        {
-            Console.WriteLine("inc");
-            return new { path = "dsfdsf" }; 
-        });
-
-        app.MapGet("/routes", (IEnumerable<EndpointDataSource> endpointSources) =>
-            string.Join("\n", endpointSources.SelectMany(source => source.Endpoints)));
-
-        app.MapGet("/i/{id}", (int id) => $"USer id: {id}");
-
-
-        app.Map("/boo/", (int? boo) =>
-        {
-            return $"{boo ?? 0}";
-        });
 
         app.MapControllers();
+        app.MapHealthChecks("/health");
 
 
         app.Run();
     }
-}
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }

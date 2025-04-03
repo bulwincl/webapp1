@@ -14,7 +14,7 @@
         "dotnetRunMessages": true,
         "commandLineArgs": "name=Bob age=37",
         "launchBrowser": true,
-        "launchUrl": "inc",
+        "launchUrl": "api/boom/as/200",
         "applicationUrl": "http://localhost:5280",
         "environmentVariables": {
             "ASPNETCORE_ENVIRONMENT": "Development"

@@ -1,4 +1,5 @@
-﻿using WebApplication1.Services;
+﻿using Serilog;
+using WebApplication1.Services;
 
 namespace WebApplication1.Middleware
 {
@@ -8,11 +9,18 @@ namespace WebApplication1.Middleware
 
         RequestDelegate _next;
 
-        public BooMiddleware(RequestDelegate next) => _next = next;
+        public BooMiddleware(RequestDelegate next)
+        {
+            _next = next;
+        }
 
         public async Task InvokeAsync(HttpContext context, IIncrementalService incService)
         {
             Console.WriteLine("Start Boo Middlware");
+
+            Log.Information($"Serilog. Path: {context.Request.Path}");
+
+            //Console.WriteLine("Start Boo Middlware");
 
             _i++;
 
